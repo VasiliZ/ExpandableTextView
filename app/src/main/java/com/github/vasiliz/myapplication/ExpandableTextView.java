@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 public class ExpandableTextView extends LinearLayout {
 
-    public static final float MULT = 1.25f;
     public static final float SIZE_TEXT_16F = 16f;
     public static final float SIZE_TEXT_14F = 14f;
     public static final float DEFAULT_SPACING = 1;
@@ -45,14 +44,15 @@ public class ExpandableTextView extends LinearLayout {
 
     }
 
-    public void setContent(final String pText) {
-        measure(getWidth(), getHeight());
-        mTextView.setText(pText);
+    public void setContent(final CharSequence pText) {
+        mTextView.setTag(pText);
+        mFullText = pText;
+        trimLongText();
     }
 
     private void init(@Nullable final AttributeSet pAttributeSet) {
 
-        TypedArray typedArray = getContext().obtainStyledAttributes(pAttributeSet, R.styleable.ExpandableTextView);
+        final TypedArray typedArray = getContext().obtainStyledAttributes(pAttributeSet, R.styleable.ExpandableTextView);
         mTextForExpand = typedArray.getString(R.styleable.ExpandableTextView_text_for_expand);
         mColorForExpandText = typedArray.getColor(R.styleable.ExpandableTextView_color_expand_text, Color.BLACK);
         mTextSizeForExpandText = typedArray.getFloat(R.styleable.ExpandableTextView_text_size_expand_text, SIZE_TEXT_16F);
@@ -60,11 +60,13 @@ public class ExpandableTextView extends LinearLayout {
         mLineSpacing = typedArray.getFloat(R.styleable.ExpandableTextView_line_spacing, DEFAULT_SPACING);
         typedArray.recycle();
         initViews();
+        isExpand = false;
 
     }
 
     private void initViews() {
         setOrientation(VERTICAL);
+
         mTextView = new TextView(getContext());
         final LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         mTextView.setLayoutParams(layoutParams);
@@ -82,49 +84,31 @@ public class ExpandableTextView extends LinearLayout {
 
         addView(mTextView);
         addView(mShowMore);
+        invalidate();
     }
 
-    @Override
-    protected void onMeasure(final int widthMeasureSpec, final int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        mLineText = mTextView.getLineCount();
-        if (mTextView.getLineCount() != 0 && !isExpand) {
-            final ViewTreeObserver viewTreeObserver = mTextView.getViewTreeObserver();
 
-            viewTreeObserver.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+    private void trimLongText() {
+        if (mFullText.length() > 300) {
+            final CharSequence tempForFullText = mFullText.subSequence(0,300);
+            mTextView.setText(tempForFullText);
+            mShowMore.setVisibility(VISIBLE);
+            mShowMore.setOnClickListener(new OnClickListener() {
 
                 @Override
-                public void onGlobalLayout() {
-                    if (viewTreeObserver.isAlive()) {
-                        mTextView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        trimLongText(mLineText);
+                public void onClick(final View v) {
+                    mTextView.setMaxLines(Integer.MAX_VALUE);
+                    if (mTextView.getTag().equals(mFullText)) {
+                        mTextView.setText(mTextView.getTag().toString());
+                        mShowMore.setVisibility(GONE);
                         isExpand = true;
-                    }
-                }
-
-                private void trimLongText(final int fullTextCountLine) {
-                    if (fullTextCountLine > VISIBLE_TEXT_LINES) {
-                        mTextView.setMaxLines(VISIBLE_TEXT_LINES);
-                        mFullText = mTextView.getText();
-                        final CharSequence tempForFullText = mFullText;
-                        tempForFullText.subSequence(0, mTextView.getLayout().getLineVisibleEnd(4));
-                        mShowMore.setVisibility(VISIBLE);
-                        mShowMore.setOnClickListener(new OnClickListener() {
-
-                            @Override
-                            public void onClick(final View v) {
-                                mTextView.setMaxLines(Integer.MAX_VALUE);
-                                mTextView.setText(mFullText);
-                                mShowMore.setVisibility(GONE);
-                            }
-                        });
                     }
                 }
             });
         } else {
-            mTextView.setText(mFullText);
+            mShowMore.setVisibility(GONE);
+            mTextView.setText(mTextView.getTag().toString());
         }
-
     }
 
 }
