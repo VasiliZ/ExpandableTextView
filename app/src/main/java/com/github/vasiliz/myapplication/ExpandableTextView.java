@@ -4,29 +4,29 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.support.annotation.Nullable;
+import android.text.method.LinkMovementMethod;
+import android.text.util.Linkify;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class ExpandableTextView extends LinearLayout {
+public class ExpandableTextView extends LinearLayout implements View.OnClickListener {
 
     public static final float SIZE_TEXT_16F = 16f;
     public static final float SIZE_TEXT_14F = 14f;
     public static final float DEFAULT_SPACING = 1;
-    private final int VISIBLE_TEXT_LINES = 5;
+    private final int LENGTH_TEXT_FOR_EXPAND = 300;
     private TextView mTextView;
     private TextView mShowMore;
-    private String TAG = "log";
     private CharSequence mFullText;
-    private int mLineText;
     private boolean isExpand;
     private String mTextForExpand;
     private int mColorForExpandText;
     private float mTextSizeForExpandText;
     private float mMainTextSize;
     private float mLineSpacing;
+    private OnClickListener mOnClickListener;
 
     public ExpandableTextView(final Context context) {
         super(context);
@@ -61,6 +61,7 @@ public class ExpandableTextView extends LinearLayout {
         typedArray.recycle();
         initViews();
         isExpand = false;
+        mTextView.setOnClickListener(this);
 
     }
 
@@ -76,6 +77,8 @@ public class ExpandableTextView extends LinearLayout {
 
         mTextView.setLineSpacing(1, mLineSpacing);
         mTextView.setTextSize(mMainTextSize);
+        mTextView.setAutoLinkMask(Linkify.ALL);
+        mTextView.setMovementMethod(LinkMovementMethod.getInstance());
 
         mShowMore.setText(mTextForExpand);
         mShowMore.setTextSize(mTextSizeForExpandText);
@@ -87,10 +90,9 @@ public class ExpandableTextView extends LinearLayout {
         invalidate();
     }
 
-
     private void trimLongText() {
-        if (mFullText.length() > 300) {
-            final CharSequence tempForFullText = mFullText.subSequence(0,300);
+        if (mFullText.length() > LENGTH_TEXT_FOR_EXPAND) {
+            final CharSequence tempForFullText = mFullText.subSequence(0, LENGTH_TEXT_FOR_EXPAND);
             mTextView.setText(tempForFullText);
             mShowMore.setVisibility(VISIBLE);
             mShowMore.setOnClickListener(new OnClickListener() {
@@ -111,6 +113,17 @@ public class ExpandableTextView extends LinearLayout {
         }
     }
 
+    @Override
+    public void onClick(final View v) {
+        if (mOnClickListener != null) {
+            mOnClickListener.onClick(v);
+        }
+
+    }
+
+    public void setOnClickListener(final OnClickListener pOnClickListener) {
+        mOnClickListener = pOnClickListener;
+    }
 }
 
 
